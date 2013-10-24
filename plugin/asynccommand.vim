@@ -81,7 +81,7 @@ endf
 "   - open result in quickfix
 function! s:AsyncGrep(query)
     let grep_cmd = asynccommand#InsertArgumentsIntoPrgCmd(&grepprg, a:query)
-    call asynccommand#run(grep_cmd, asynchandler#quickfix(&grepformat, '[Found: %s] grep ' . a:query))
+    call asynccommand#run(grep_cmd, asynchandler#quickfix(&grepformat, '[Found: %d] grep ' . a:query))
 endfunction
 
 " Shell commands
@@ -95,7 +95,7 @@ endfunction
 "   - optional parameter for make target(s)
 function! s:AsyncMake(target)
     let make_cmd = asynccommand#InsertArgumentsIntoPrgCmd(&makeprg, a:target)
-    let title = 'Make: '
+    let title = 'Make: [%d]'
     if a:target == ''
         let title .= "(default)"
     else
@@ -177,7 +177,7 @@ function! s:AsyncCscopeFind(type_num, query, title)
 endfunction
 
 function! s:CscopeResults(title)
-    return asynchandler#quickfix("%-G>>%m,%f:%l\ %m", "[Found: %s] Cscope: " . a:title)
+    return asynchandler#quickfix("%-G>>%m,%f:%l\ %m", "[Found: %d] Cscope: " . a:title)
 endfunction
 
 let &cpo = s:save_cpo
