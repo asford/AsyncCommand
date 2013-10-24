@@ -37,6 +37,7 @@ function! AsyncCommandDone(file, return_code)
 endfunction
 
 command! AsyncPending call asynccommand#open_pending()
+command! AsyncTogglePending call asynccommand#toggle_pending()
 
 command! -nargs=+ -complete=shellcmd AsyncCommand call asynccommand#run(<q-args>)
 command! -nargs=+ -complete=file AsyncGrep call s:AsyncGrep(<q-args>)
@@ -60,7 +61,7 @@ endif
 " grepprg and makeprg both allow an optional placeholder '$*' to specify where
 " arguments are included. If omitted, append a space and the arguments to the
 " end of the prg command.
-function! s:InsertArgumentsIntoPrgCmd(prg_command, arguments)
+function! asynccommand#InsertArgumentsIntoPrgCmd(prg_command, arguments)
     let placeholder_re = '\V$*'
     let cmd = a:prg_command
     if match(cmd, placeholder_re) < 0
@@ -79,7 +80,7 @@ endf
 " Grep
 "   - open result in quickfix
 function! s:AsyncGrep(query)
-    let grep_cmd = s:InsertArgumentsIntoPrgCmd(&grepprg, a:query)
+    let grep_cmd = asynccommand#InsertArgumentsIntoPrgCmd(&grepprg, a:query)
     call asynccommand#run(grep_cmd, asynchandler#quickfix(&grepformat, '[Found: %s] grep ' . a:query))
 endfunction
 
@@ -93,7 +94,7 @@ endfunction
 "   - uses the current make program
 "   - optional parameter for make target(s)
 function! s:AsyncMake(target)
-    let make_cmd = s:InsertArgumentsIntoPrgCmd(&makeprg, a:target)
+    let make_cmd = asynccommand#InsertArgumentsIntoPrgCmd(&makeprg, a:target)
     let title = 'Make: '
     if a:target == ''
         let title .= "(default)"

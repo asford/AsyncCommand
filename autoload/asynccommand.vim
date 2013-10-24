@@ -192,18 +192,42 @@ function! s:create_pending_listing()
     let out  = "Pending Output Files\n"
     let out .= "====================\n"
     let out .= "Commands (identified by window title if available) are writing to these files.\n"
-    let out .= "\n"
     for [fname, handler] in items(s:receivers)
+        let out .= "\n"
         let out .= fname
         try
             let id = handler.dict.env.title
         catch /Key not present in Dictionary/
             let id = 'untitled'
         endtry
-        let out .= printf("\t- %s\n", id)
+        let out .= printf("\t- %s", id)
     endfor
     return out
 endfunction
+
+" Open pending command result file under the cursor
+function! asynccommand#open_pending_under_cursor()
+    let pending_file = ""
+    if line('.') > 4 && match(getline('.'),  '^\S*\s\+-\s\+.*$') > -1
+        let pending_file = substitute(getline('.'), '^\(\S*\)\s\+-\s\+.*$', '\1', '')
+    endif
+    
+    if pending_file == ""
+        return
+    endif
+    
+    execute "silent pedit ".pending_file
+
+    setlocal noswapfile
+    setlocal nobuflisted
+    setlocal readonly
+
+    " Setup autoread in buffer and add buffer-local checktime events to
+    " recheck file for new output.
+    setlocal autoread
+    au CursorHold,CursorHoldI,CursorMoved,CursorMovedI,Bufenter <buffer> checktime
+endfunction
+
 
 function! asynccommand#open_pending()
     silent pedit _AsyncPending_
@@ -220,6 +244,25 @@ function! asynccommand#open_pending()
     setlocal noswapfile
     setlocal nobuflisted
     setlocal readonly
+
+    " Setup commands and maps to open pending files
+    command! -buffer AsyncPendingOpen :call asynccommand#open_pending_under_cursor()
+    nnoremap <silent> <buffer> <CR> :AsyncPendingOpen<CR>
+endfunction
+
+function! asynccommand#close_pending()
+    if bufwinnr(bufnr("_AsyncPending_")) != -1
+        exe bufwinnr(bufnr("_AsyncPending_")) . "wincmd w"
+        quit   
+    endif
+endfunction
+
+function! asynccommand#toggle_pending()
+    if bufwinnr(bufnr("_AsyncPending_")) == -1
+        call asynccommand#open_pending()
+    else    
+        call asynccommand#close_pending()
+    endif
 endfunction
 
 " vi: et sw=4 ts=4
